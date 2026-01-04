@@ -15,8 +15,8 @@ venv/
 .vscode/
 .idea/
 
-# YOLO / Models
-models/*.pt
+## YOLO / Models
+#models/*.pt
 
 # OS
 .DS_Store
