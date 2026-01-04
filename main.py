@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from ui.mainwindow import Ui_MainWindow  # 导入生成的界面类
-from core.work import CroppingThread
+from core.work import CroppingThread, ModelLoaderThread
 import os
 import webbrowser
 
@@ -32,6 +32,12 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)  # 初始化界面
+
+        # 创建线程
+        self.model_thread = ModelLoaderThread()
+        self.model_thread.log_signal.connect(self.append_log)  # 连接日志信号
+        self.model_thread.finished.connect(self.on_models_loaded)  # 连接完成信号
+        self.model_thread.start()
 
         self.ok_button = self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
         self.cancel_button = self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel)
@@ -81,6 +87,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.append_log("就绪")
         self.plabel.setText("就绪")
 
+    def on_models_loaded(self):
+        self.append_log("所有模型已成功加载，程序就绪！")
 
     def disable_controls(self):
         """ 禁用相关的控件 """

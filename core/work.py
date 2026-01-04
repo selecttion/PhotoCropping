@@ -13,17 +13,6 @@ from skimage.feature import local_binary_pattern
 from typing import List, Tuple
 
 
-def get_project_root():
-    """
-    返回项目根目录
-    - 源码运行
-    - PyInstaller exe
-    都能用
-    """
-    if hasattr(sys, '_MEIPASS'):
-        return sys._MEIPASS
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
 # def load_model(weights_path):
 #     # 直接加载本地模型文件
 #     model = torch.hub.load('D:\work\PhotoCropping\yolov5', 'custom', path=weights_path, source='local')
@@ -42,25 +31,57 @@ if YOLOV5_ROOT not in sys.path:
     sys.path.insert(0, YOLOV5_ROOT)
 
 import torch
-from yolov5.models.common import DetectMultiBackend
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_model(weight_name):
+    """
+    加载 YOLOv5 模型（torch.hub.load 风格，可打包 exe）
+    weight_name: 模型文件名，例如 "best.pt" 或 "yolov5s.pt"
+    """
+    # 1. 构造权重路径
     weights_path = os.path.join(PROJECT_ROOT, "models", weight_name)
 
-    model = DetectMultiBackend(
-        weights_path,
-        device=device,
-        dnn=False,
-        data=None,
-        fp16=False
+    # 2. 确保路径在打包后可访问（PyInstaller 会解压到 _MEIPASS）
+    if getattr(sys, 'frozen', False):  # exe 打包
+        base_path = sys._MEIPASS
+        weights_path = os.path.join(base_path, "models", weight_name)
+
+    # 3. 加载模型
+    model = torch.hub.load(
+        os.path.join(PROJECT_ROOT, "yolov5"),  # 本地 yolov5 目录
+        'custom',
+        path=weights_path,
+        source='local'
     )
-    model.model.eval()
+
+    # 4. 移动到设备并设置评估模式
+    model.to(device).eval()
+
     return model
 
-face_model = load_model("best.pt")
-person_model = load_model("yolov5s.pt")
+face_model = None
+person_model = None
+
+def init_models():
+    global face_model, person_model
+    face_model = load_model("best.pt")
+    person_model = load_model("yolov5s.pt")
+
+class ModelLoaderThread(QThread):
+    log_signal = pyqtSignal(str)      # 发送日志信息
+    finished = pyqtSignal()           # 模型加载完成信号
+
+    def run(self):
+        self.log_signal.emit("正在加载 face 模型……")
+        global face_model, person_model
+        face_model = load_model("best.pt")
+
+        self.log_signal.emit("正在加载 person 模型……")
+        person_model = load_model("yolov5s.pt")
+
+        self.log_signal.emit("模型加载完成！")
+        self.finished.emit()
 
 RATIO_MAP = {1: (7, 10, 1050, 1500), 2: (2, 3, 1200, 1800), 3: (3, 4, 1350, 1800)}
 pid = 0
