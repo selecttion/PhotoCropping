@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Virtual environment
+venv/
+.env/
+
+# IDE
+.vscode/
+.idea/
+
+# YOLO / Models
+models/*.pt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / Temp
+test/
+test2/
+envtest/
+out/
+
+# assess
+assess/

@@ -1,0 +1,5 @@
+train: datasets/widerface/images/train  # 训练集路径
+val: datasets/widerface/images/val      # 验证集路径
+
+nc: 1  # 类别数（只有人脸一类）
+names: ['face']  # 类别名称
